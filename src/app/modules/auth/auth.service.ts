@@ -15,18 +15,38 @@ import {
 import cryptoToken from '../../../util/cryptoToken';
 import generateOTP from '../../../util/generateOTP';
 import { ResetToken } from '../resetToken/resetToken.model';
-import { User } from '../user/user.model';
+import { User } from '../student/user.model';
+import e from 'cors';
+import { Teacher } from '../teacher/teacher.model';
 
 //login
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password } = payload;
+
+  // first we define a variable called existUser it's initially null then we start checking if there is any user with that email if it doesn't we check if there is any teacher with that email if it doesn't exist we throw an error and if anything exist using this email we store that in existUser and continue the process with exist user
+
+  let existUser = null;
   const isExistUser = await User.findOne({ email }).select('+password');
   if (!isExistUser) {
+    const isExistTeracher = await Teacher.findOne({ email }).select(
+      '+password'
+    );
+    if (isExistTeracher) {
+      existUser = isExistTeracher;
+    } else {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+  } else {
+    existUser = isExistUser;
+  }
+
+  // checking if existUser is null
+  if (existUser === null) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
   //check verified and status
-  if (!isExistUser.verified) {
+  if (!existUser.verified) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Please verify your account, then try to login again'
@@ -34,7 +54,7 @@ const loginUserFromDB = async (payload: ILoginData) => {
   }
 
   //check user status
-  if (isExistUser.status === 'delete') {
+  if (existUser.status === 'delete') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'You don’t have permission to access this content.It looks like your account has been deactivated.'
@@ -42,16 +62,13 @@ const loginUserFromDB = async (payload: ILoginData) => {
   }
 
   //check match password
-  if (
-    password &&
-    !(await User.isMatchPassword(password, isExistUser.password))
-  ) {
+  if (password && !(await User.isMatchPassword(password, existUser.password))) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
   }
 
   //create token
   const createToken = jwtHelper.createToken(
-    { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
+    { id: existUser._id, role: existUser.role, email: existUser.email },
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_expire_in as string
   );
