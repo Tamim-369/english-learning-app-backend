@@ -7,11 +7,9 @@ import { StudentController } from './student.controller';
 import { StudentValidation } from './student.validation';
 const router = express.Router();
 
-router.get(
-  '/profile',
-  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT),
-  StudentController.getStudentProfile
-);
+router.get('/', StudentController.getAllStudents);
+
+router.get('/:id', StudentController.getStudentById);
 
 router.put(
   '/:id',

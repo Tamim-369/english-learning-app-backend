@@ -82,8 +82,22 @@ const updateProfileToDB = async (
   return updateDoc;
 };
 
-export const UserService = {
+const getAllStudentsFromDB = async (): Promise<IStudent[]> => {
+  const result = await Student.find({}).select('-cardNumber');
+  return result;
+};
+
+const getStudentByIdFromDB = async (
+  id: string
+): Promise<Partial<IStudent | null>> => {
+  const result = await Student.findOne({ _id: id }, { password: 0 });
+  return result;
+};
+
+export const StudentService = {
   createStudentToDB,
   getStudentProfileFromDB,
   updateProfileToDB,
+  getAllStudentsFromDB,
+  getStudentByIdFromDB,
 };

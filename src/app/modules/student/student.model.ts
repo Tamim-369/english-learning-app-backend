@@ -46,9 +46,14 @@ const userSchema = new Schema<IStudent, StudentModel>(
       enum: ['active', 'delete'],
       default: 'active',
     },
+
     verified: {
       type: Boolean,
       default: false,
+    },
+    cardNumber: {
+      type: String,
+      unique: true,
     },
     authentication: {
       type: {

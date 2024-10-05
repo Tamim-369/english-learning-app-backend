@@ -2,12 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { UserService } from './student.service';
+import { StudentService } from './student.service';
 
 const createStudent = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { ...userData } = req.body;
-    const result = await UserService.createStudentToDB(userData);
+    const result = await StudentService.createStudentToDB(userData);
 
     sendResponse(res, {
       success: true,
@@ -20,7 +20,7 @@ const createStudent = catchAsync(
 
 const getStudentProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
-  const result = await UserService.getStudentProfileFromDB(user);
+  const result = await StudentService.getStudentProfileFromDB(user);
 
   sendResponse(res, {
     success: true,
@@ -43,7 +43,7 @@ const updateProfile = catchAsync(
       profile,
       ...req.body,
     };
-    const result = await UserService.updateProfileToDB(id, data);
+    const result = await StudentService.updateProfileToDB(id, data);
 
     sendResponse(res, {
       success: true,
@@ -54,8 +54,31 @@ const updateProfile = catchAsync(
   }
 );
 
+const getAllStudents = catchAsync(async (req: Request, res: Response) => {
+  const result = await StudentService.getAllStudentsFromDB();
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Students retrieved successfully',
+    data: result,
+  });
+});
+
+const getStudentById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const result = await StudentService.getStudentByIdFromDB(id);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Student retrieved successfully',
+    data: result,
+  });
+});
+
 export const StudentController = {
   createStudent,
   getStudentProfile,
   updateProfile,
+  getAllStudents,
+  getStudentById,
 };
