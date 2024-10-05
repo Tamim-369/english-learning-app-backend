@@ -12,6 +12,8 @@ export type IStudent = {
   cardNumber?: string;
   status: 'active' | 'delete';
   verified: boolean;
+  gender: string;
+  dateOfBirth: Date;
   authentication?: {
     isResetPassword: boolean;
     oneTimeCode: number;
@@ -20,7 +22,7 @@ export type IStudent = {
 };
 
 export type StudentModel = {
-  isExistUserById(id: string): any;
+  isExistStudentById(id: string): any;
   isExistUserByEmail(email: string): any;
   isMatchPassword(password: string, hashPassword: string): boolean;
 } & Model<IStudent>;

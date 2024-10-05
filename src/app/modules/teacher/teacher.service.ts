@@ -8,6 +8,7 @@ import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
 import { ITeacher } from './teacher.interface';
 import { Teacher } from './teacher.model';
+import { isStudentDeleted } from '../../../util/isDeleted';
 
 const createTeacherToDB = async (
   payload: Partial<ITeacher>
@@ -47,6 +48,10 @@ const getTeacherProfileFromDB = async (
 ): Promise<Partial<ITeacher>> => {
   const { id } = teacher;
   const isExistTeacher = await Teacher.isExistTeacherById(id);
+  const isDeleted = isStudentDeleted(isExistTeacher);
+  if (isDeleted) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher deleted!');
+  }
   if (!isExistTeacher) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Teacher doesn't exist!");
   }
@@ -62,7 +67,10 @@ const updateProfileToDB = async (
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Teacher doesn't exist!");
   }
-
+  const isDeleted = isStudentDeleted(isExistUser);
+  if (isDeleted) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher deleted!');
+  }
   //unlink file here
   if (payload.profile) {
     unlinkFile(isExistUser.profile);
@@ -76,14 +84,34 @@ const updateProfileToDB = async (
 };
 
 const getAllTeachersFromDB = async (): Promise<Partial<ITeacher>[]> => {
-  const result = await Teacher.find({}, { password: 0 });
+  const result = await Teacher.find(
+    { status: { $ne: 'delete' } },
+    { password: 0 }
+  );
   return result;
 };
 const getTeacherByIdFromDB = async (
   id: string
 ): Promise<Partial<ITeacher | null>> => {
   const result = await Teacher.findOne({ _id: id }, { password: 0 });
+  const isDeleted = isStudentDeleted(result);
+  if (isDeleted) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher deleted!');
+  }
   return result;
+};
+
+const deleteTeacherFromDB = async (id: string) => {
+  const existTeacher = await Teacher.isExistTeacherById(id);
+  if (!existTeacher) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Teacher doesn't exist!");
+  }
+  if (existTeacher.status === 'delete') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher already deleted!');
+  }
+  await Teacher.findOneAndUpdate({ _id: id }, { status: 'delete' });
+
+  return { message: 'Teacher deleted successfully' };
 };
 
 export const TeacherService = {
@@ -92,4 +120,5 @@ export const TeacherService = {
   updateProfileToDB,
   getAllTeachersFromDB,
   getTeacherByIdFromDB,
+  deleteTeacherFromDB,
 };

@@ -11,13 +11,17 @@ router.get('/', StudentController.getAllStudents);
 
 router.get('/:id', StudentController.getStudentById);
 
-router.put(
+router.patch(
   '/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT),
   fileUploadHandler(),
   StudentController.updateProfile
 );
-
+router.delete(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.STUDENT),
+  StudentController.deleteStudent
+);
 router
   .route('/')
   .post(

@@ -5,6 +5,7 @@ import config from '../../../config';
 import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { IStudent, StudentModel } from './student.interface';
+import { object } from 'zod';
 
 const userSchema = new Schema<IStudent, StudentModel>(
   {
@@ -54,6 +55,16 @@ const userSchema = new Schema<IStudent, StudentModel>(
     cardNumber: {
       type: String,
       unique: true,
+      default: null,
+    },
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other'],
+      default: 'male',
+    },
+    dateOfBirth: {
+      type: Date,
+      default: null,
     },
     authentication: {
       type: {
@@ -77,7 +88,7 @@ const userSchema = new Schema<IStudent, StudentModel>(
 );
 
 //exist user check
-userSchema.statics.isExistUserById = async (id: string) => {
+userSchema.statics.isExistStudentById = async (id: string) => {
   const isExist = await Student.findById(id);
   return isExist;
 };

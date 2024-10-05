@@ -17,7 +17,7 @@ router.get('/all', TeacherController.getAllTeachers);
 // get teacher by id
 router.get('/:id', TeacherController.getTeacherById);
 // update teacher profile
-router.put(
+router.patch(
   '/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
   validateRequest(TeacherValidation.updateTeacherZodSchema),
@@ -25,6 +25,11 @@ router.put(
   TeacherController.updateProfile
 );
 
+router.delete(
+  '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
+  TeacherController.deleteTeacher
+);
 // create new teacher
 router
   .route('/')

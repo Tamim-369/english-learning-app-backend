@@ -78,10 +78,22 @@ const getTeacherById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteTeacher = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const result = await TeacherService.deleteTeacherFromDB(id);
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Teacher deleted successfully',
+    data: result,
+  });
+});
+
 export const TeacherController = {
   createUser,
   getTeacherProfile,
   updateProfile,
   getTeacherById,
   getAllTeachers,
+  deleteTeacher,
 };
