@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.post(
   '/',
-  // validateRequest(CourseValidation.createCourseZodSchema),
   fileUploadHandler(),
+  validateRequest(CourseValidation.createCourseZodSchema),
   CourseController.createCourse
 );
 
