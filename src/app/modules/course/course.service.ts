@@ -26,12 +26,24 @@ const createCourseToDB = async (data: any): Promise<Partial<ICourse>> => {
   if (isTeacherDeleted) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher deleted!');
   }
+  const time = JSON.parse(data.time);
+  data.time = {
+    start: new Date(time.start),
+    end: new Date(time.end),
+  };
   const result = await Course.create(data);
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Course not created!');
   }
   if (lectures) {
-    for (const lecture of lectures) {
+    const jsonLectures = JSON.parse(lectures);
+    if (!Array.isArray(jsonLectures)) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Lectures must be an array of lectures!'
+      );
+    }
+    for (const lecture of jsonLectures) {
       const resultLecture = await Lecture.create({
         ...lecture,
         courseID: result._id,

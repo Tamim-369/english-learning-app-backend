@@ -26,6 +26,9 @@ const fileUploadHandler = () => {
         case 'profile':
           uploadDir = path.join(baseUploadDir, 'profiles');
           break;
+        case 'banner':
+          uploadDir = path.join(baseUploadDir, 'banners');
+          break;
         case 'image':
           uploadDir = path.join(baseUploadDir, 'images');
           break;
@@ -57,7 +60,11 @@ const fileUploadHandler = () => {
 
   //file filter
   const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    if (file.fieldname === 'image' || file.fieldname === 'profile') {
+    if (
+      file.fieldname === 'image' ||
+      file.fieldname === 'profile' ||
+      file.fieldname === 'banner'
+    ) {
       if (
         file.mimetype === 'image/jpeg' ||
         file.mimetype === 'image/png' ||
@@ -94,6 +101,7 @@ const fileUploadHandler = () => {
     storage: storage,
     fileFilter: filterFilter,
   }).fields([
+    { name: 'banner', maxCount: 3 },
     { name: 'profile', maxCount: 3 },
     { name: 'image', maxCount: 3 },
     { name: 'media', maxCount: 3 },
