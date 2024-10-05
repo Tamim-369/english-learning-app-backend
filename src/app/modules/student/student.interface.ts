@@ -1,13 +1,13 @@
 import { Model } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
-export type IUser = {
+export type IStudent = {
   name: string;
   role: USER_ROLES;
-  contact: string;
+  phone: string;
   email: string;
   password: string;
-  location: string;
+  address: string;
   profile?: string;
   status: 'active' | 'delete';
   verified: boolean;
@@ -18,8 +18,8 @@ export type IUser = {
   };
 };
 
-export type UserModal = {
+export type StudentModel = {
   isExistUserById(id: string): any;
   isExistUserByEmail(email: string): any;
   isMatchPassword(password: string, hashPassword: string): boolean;
-} & Model<IUser>;
+} & Model<IStudent>;

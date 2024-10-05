@@ -4,9 +4,9 @@ import { model, Schema } from 'mongoose';
 import config from '../../../config';
 import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
-import { IUser, UserModal } from './user.interface';
+import { IStudent, StudentModel } from './student.interface';
 
-const userSchema = new Schema<IUser, UserModal>(
+const userSchema = new Schema<IStudent, StudentModel>(
   {
     name: {
       type: String,
@@ -14,7 +14,7 @@ const userSchema = new Schema<IUser, UserModal>(
     },
     role: {
       type: String,
-      enum: Object.values(USER_ROLES),
+      default: USER_ROLES.STUDENT,
       required: true,
     },
     email: {
@@ -23,7 +23,7 @@ const userSchema = new Schema<IUser, UserModal>(
       unique: true,
       lowercase: true,
     },
-    contact: {
+    phone: {
       type: String,
       required: true,
     },
@@ -33,7 +33,7 @@ const userSchema = new Schema<IUser, UserModal>(
       select: 0,
       minlength: 8,
     },
-    location: {
+    address: {
       type: String,
       required: true,
     },
@@ -73,12 +73,12 @@ const userSchema = new Schema<IUser, UserModal>(
 
 //exist user check
 userSchema.statics.isExistUserById = async (id: string) => {
-  const isExist = await User.findById(id);
+  const isExist = await Student.findById(id);
   return isExist;
 };
 
 userSchema.statics.isExistUserByEmail = async (email: string) => {
-  const isExist = await User.findOne({ email });
+  const isExist = await Student.findOne({ email });
   return isExist;
 };
 
@@ -93,7 +93,7 @@ userSchema.statics.isMatchPassword = async (
 //check user
 userSchema.pre('save', async function (next) {
   //check user
-  const isExist = await User.findOne({ email: this.email });
+  const isExist = await Student.findOne({ email: this.email });
   if (isExist) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exist!');
   }
@@ -106,4 +106,4 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-export const User = model<IUser, UserModal>('User', userSchema);
+export const Student = model<IStudent, StudentModel>('Student', userSchema);

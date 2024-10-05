@@ -6,17 +6,26 @@ import { emailHelper } from '../../../helpers/emailHelper';
 import { emailTemplate } from '../../../shared/emailTemplate';
 import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
-import { IUser } from './user.interface';
-import { User } from './user.model';
+import { IStudent } from './student.interface';
+import { Student } from './student.model';
+import { Teacher } from '../teacher/teacher.model';
 
-const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
+const createStudentToDB = async (
+  payload: Partial<IStudent>
+): Promise<IStudent> => {
   //set role
-  payload.role = USER_ROLES.USER;
-  const createUser = await User.create(payload);
+  payload.role = USER_ROLES.STUDENT;
+  const createUser = await Student.create(payload);
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
-
+  const existTeacher = await Teacher.findOne({ email: createUser.email });
+  if (existTeacher) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Email already exist in teacher!'
+    );
+  }
   //send email
   const otp = generateOTP();
   const values = {
@@ -32,7 +41,7 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
     oneTimeCode: otp,
     expireAt: new Date(Date.now() + 3 * 60000),
   };
-  await User.findOneAndUpdate(
+  await Student.findOneAndUpdate(
     { _id: createUser._id },
     { $set: { authentication } }
   );
@@ -40,11 +49,11 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   return createUser;
 };
 
-const getUserProfileFromDB = async (
+const getStudentProfileFromDB = async (
   user: JwtPayload
-): Promise<Partial<IUser>> => {
+): Promise<Partial<IStudent>> => {
   const { id } = user;
-  const isExistUser = await User.isExistUserById(id);
+  const isExistUser = await Student.isExistUserById(id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -53,11 +62,10 @@ const getUserProfileFromDB = async (
 };
 
 const updateProfileToDB = async (
-  user: JwtPayload,
-  payload: Partial<IUser>
-): Promise<Partial<IUser | null>> => {
-  const { id } = user;
-  const isExistUser = await User.isExistUserById(id);
+  id: string,
+  payload: Partial<IStudent>
+): Promise<Partial<IStudent | null>> => {
+  const isExistUser = await Student.isExistUserById(id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -67,7 +75,7 @@ const updateProfileToDB = async (
     unlinkFile(isExistUser.profile);
   }
 
-  const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
+  const updateDoc = await Student.findOneAndUpdate({ _id: id }, payload, {
     new: true,
   });
 
@@ -75,7 +83,7 @@ const updateProfileToDB = async (
 };
 
 export const UserService = {
-  createUserToDB,
-  getUserProfileFromDB,
+  createStudentToDB,
+  getStudentProfileFromDB,
   updateProfileToDB,
 };

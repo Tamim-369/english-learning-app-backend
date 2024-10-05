@@ -15,37 +15,29 @@ import {
 import cryptoToken from '../../../util/cryptoToken';
 import generateOTP from '../../../util/generateOTP';
 import { ResetToken } from '../resetToken/resetToken.model';
-import { User } from '../student/user.model';
+import { Student } from '../student/student.model';
 import e from 'cors';
 import { Teacher } from '../teacher/teacher.model';
+import { findInStudentAndTeacher } from '../../../util/findInStudentAndTeacher';
+import { USER_ROLES } from '../../../enums/user';
+import { getModelAccordingToRole } from '../../../util/getModelAccordingToRole';
+import { logger } from '../../../shared/logger';
 
 //login
+
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password } = payload;
 
-  // first we define a variable called existUser it's initially null then we start checking if there is any user with that email if it doesn't we check if there is any teacher with that email if it doesn't exist we throw an error and if anything exist using this email we store that in existUser and continue the process with exist user
-
-  let existUser = null;
-  const isExistUser = await User.findOne({ email }).select('+password');
-  if (!isExistUser) {
-    const isExistTeracher = await Teacher.findOne({ email }).select(
-      '+password'
-    );
-    if (isExistTeracher) {
-      existUser = isExistTeracher;
-    } else {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-    }
-  } else {
-    existUser = isExistUser;
-  }
-
+  const existUser: any = await findInStudentAndTeacher(email, 'password');
   // checking if existUser is null
-  if (existUser === null) {
+  if (!existUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //check verified and status
+  // Retrieve the model based on the user's role
+  let User = await getModelAccordingToRole(existUser);
+
+  // Check if user is verified
   if (!existUser.verified) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -53,20 +45,23 @@ const loginUserFromDB = async (payload: ILoginData) => {
     );
   }
 
-  //check user status
+  // Check if user's account is deactivated
   if (existUser.status === 'delete') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'You don’t have permission to access this content.It looks like your account has been deactivated.'
+      'You don’t have permission to access this content. It looks like your account has been deactivated.'
     );
   }
 
-  //check match password
-  if (password && !(await User.isMatchPassword(password, existUser.password))) {
+  // Check if the password matches
+  if (
+    password &&
+    !(await User?.isMatchPassword(password, existUser.password))
+  ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
   }
 
-  //create token
+  // Create token for the user
   const createToken = jwtHelper.createToken(
     { id: existUser._id, role: existUser.role, email: existUser.email },
     config.jwt.jwt_secret as Secret,
@@ -78,87 +73,134 @@ const loginUserFromDB = async (payload: ILoginData) => {
 
 //forget password
 const forgetPasswordToDB = async (email: string) => {
-  const isExistUser = await User.isExistUserByEmail(email);
+  // Check if user exists in Student or Teacher collections
+  const isExistUser: any = await findInStudentAndTeacher(email);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //send mail
+  // Retrieve the model based on the user's role
+  const User = getModelAccordingToRole(isExistUser);
+
+  // Generate OTP
   const otp = generateOTP();
-  const value = {
+
+  // Prepare email template data
+  const emailData = {
     otp,
     email: isExistUser.email,
   };
-  const forgetPassword = emailTemplate.resetPassword(value);
-  emailHelper.sendEmail(forgetPassword);
 
-  //save to DB
+  // Send reset password email
+  const resetPasswordEmail = emailTemplate.resetPassword(emailData);
+  emailHelper.sendEmail(resetPasswordEmail);
+
+  // Save OTP and expiration time to DB
   const authentication = {
     oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000),
+    expireAt: new Date(Date.now() + 3 * 60000), // OTP expires in 3 minutes
   };
-  await User.findOneAndUpdate({ email }, { $set: { authentication } });
+
+  // Update the user's authentication data with the OTP and expiration time
+  await User?.findOneAndUpdate(
+    { email: isExistUser.email },
+    { $set: { authentication } }
+  );
 };
 
 //verify email
+
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
   const { email, oneTimeCode } = payload;
-  const isExistUser = await User.findOne({ email }).select('+authentication');
-  if (!isExistUser) {
+
+  // Check if user exists in both Student and Teacher collections
+  const isExistUserStudent = await Student.findOne({ email }).select(
+    '+authentication'
+  );
+  const isExistUserTeacher = await Teacher.findOne({ email }).select(
+    '+authentication'
+  );
+
+  // Determine which user model to use
+  let isExistUser;
+  let User;
+  if (isExistUserStudent) {
+    isExistUser = isExistUserStudent;
+    User = Student; // Set the model to Student
+  } else if (isExistUserTeacher) {
+    isExistUser = isExistUserTeacher;
+    User = Teacher; // Set the model to Teacher
+  } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
+  // Ensure that an OTP is provided
   if (!oneTimeCode) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Please give the otp, check your email we send a code'
+      'Please provide the OTP. Check your email for the verification code.'
     );
   }
 
+  // Check if the OTP matches
   if (isExistUser.authentication?.oneTimeCode !== oneTimeCode) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'You provided wrong otp');
-  }
-
-  const date = new Date();
-  if (date > isExistUser.authentication?.expireAt) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Otp already expired, Please try again'
+      'The OTP you provided is incorrect.'
+    );
+  }
+
+  // Check if the OTP has expired
+  const currentTime = new Date();
+  if (currentTime > isExistUser.authentication?.expireAt) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'The OTP has expired. Please request a new one.'
     );
   }
 
   let message;
   let data;
 
+  // If the user is not verified, verify the email and clear the OTP
   if (!isExistUser.verified) {
     await User.findOneAndUpdate(
       { _id: isExistUser._id },
-      { verified: true, authentication: { oneTimeCode: null, expireAt: null } }
+      {
+        $set: {
+          verified: true,
+          'authentication.oneTimeCode': null,
+          'authentication.expireAt': null,
+        },
+      }
     );
-    message = 'Email verify successfully';
+    message = 'Email verified successfully';
   } else {
+    // If the user is already verified, generate a reset token for password reset
+    const createToken = cryptoToken(); // Secure token generation
+    await ResetToken.create({
+      user: isExistUser._id,
+      token: createToken,
+      expireAt: new Date(Date.now() + 5 * 60000), // Token valid for 5 minutes
+    });
+
+    // Mark the user as in reset password mode and clear the OTP
     await User.findOneAndUpdate(
       { _id: isExistUser._id },
       {
-        authentication: {
-          isResetPassword: true,
-          oneTimeCode: null,
-          expireAt: null,
+        $set: {
+          'authentication.isResetPassword': true,
+          'authentication.oneTimeCode': null,
+          'authentication.expireAt': null,
         },
       }
     );
 
-    //create token ;
-    const createToken = cryptoToken();
-    await ResetToken.create({
-      user: isExistUser._id,
-      token: createToken,
-      expireAt: new Date(Date.now() + 5 * 60000),
-    });
     message =
-      'Verification Successful: Please securely store and utilize this code for reset password';
+      'Verification successful. Please securely store this code to reset your password.';
     data = createToken;
   }
+
   return { data, message };
 };
 
@@ -168,45 +210,62 @@ const resetPasswordToDB = async (
   payload: IAuthResetPassword
 ) => {
   const { newPassword, confirmPassword } = payload;
-  //isExist token
+
+  // Check if the reset token exists
   const isExistToken = await ResetToken.isExistToken(token);
   if (!isExistToken) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, 'You are not authorized');
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'You are not authorized.');
   }
 
-  //user permission check
-  const isExistUser = await User.findById(isExistToken.user).select(
+  // Check for the user in both Student and Teacher collections
+  const isExistUserStudent = await Student.findById(isExistToken.user).select(
     '+authentication'
   );
+  const isExistUserTeacher = await Teacher.findById(isExistToken.user).select(
+    '+authentication'
+  );
+
+  let isExistUser;
+  if (isExistUserStudent) {
+    isExistUser = isExistUserStudent; // User is a Student
+  } else if (isExistUserTeacher) {
+    isExistUser = isExistUserTeacher; // User is a Teacher
+  } else {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+  }
+
+  // Ensure the user has permission to reset the password
   if (!isExistUser?.authentication?.isResetPassword) {
     throw new ApiError(
       StatusCodes.UNAUTHORIZED,
-      "You don't have permission to change the password. Please click again to 'Forgot Password'"
+      "You don't have permission to change the password. Please initiate the 'Forgot Password' process again."
     );
   }
 
-  //validity check
+  // Check if the token is expired
   const isValid = await ResetToken.isExpireToken(token);
   if (!isValid) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Token expired, Please click again to the forget password'
+      'Token expired. Please initiate the "Forgot Password" process again.'
     );
   }
 
-  //check password
+  // Check if the new password and confirm password match
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "New password and Confirm password doesn't match!"
+      "New password and Confirm password don't match!"
     );
   }
 
+  // Hash the new password
   const hashPassword = await bcrypt.hash(
     newPassword,
     Number(config.bcrypt_salt_rounds)
   );
 
+  // Prepare the update data
   const updateData = {
     password: hashPassword,
     authentication: {
@@ -214,9 +273,12 @@ const resetPasswordToDB = async (
     },
   };
 
-  await User.findOneAndUpdate({ _id: isExistToken.user }, updateData, {
-    new: true,
-  });
+  // Update the user's password and reset the authentication state
+  await (isExistUser instanceof Student ? Student : Teacher).findOneAndUpdate(
+    { _id: isExistUser._id },
+    updateData,
+    { new: true }
+  );
 };
 
 const changePasswordToDB = async (
@@ -224,15 +286,15 @@ const changePasswordToDB = async (
   payload: IChangePassword
 ) => {
   const { currentPassword, newPassword, confirmPassword } = payload;
-  const isExistUser = await User.findById(user.id).select('+password');
+  const isExistUser = await findInStudentAndTeacher(user.email, 'password');
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
-
+  const User = getModelAccordingToRole(isExistUser);
   //current password match
   if (
     currentPassword &&
-    !(await User.isMatchPassword(currentPassword, isExistUser.password))
+    !(await User?.isMatchPassword(currentPassword, isExistUser.password))
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
   }
@@ -261,7 +323,7 @@ const changePasswordToDB = async (
   const updateData = {
     password: hashPassword,
   };
-  await User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
+  await User?.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
 };
 
 export const AuthService = {

@@ -2,12 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { UserService } from './user.service';
+import { UserService } from './student.service';
 
-const createUser = catchAsync(
+const createStudent = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { ...userData } = req.body;
-    const result = await UserService.createUserToDB(userData);
+    const result = await UserService.createStudentToDB(userData);
 
     sendResponse(res, {
       success: true,
@@ -18,9 +18,9 @@ const createUser = catchAsync(
   }
 );
 
-const getUserProfile = catchAsync(async (req: Request, res: Response) => {
+const getStudentProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
-  const result = await UserService.getUserProfileFromDB(user);
+  const result = await UserService.getStudentProfileFromDB(user);
 
   sendResponse(res, {
     success: true,
@@ -33,17 +33,17 @@ const getUserProfile = catchAsync(async (req: Request, res: Response) => {
 //update profile
 const updateProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user;
+    const id = req.params.id;
     let profile;
-    if (req.files && 'image' in req.files && req.files.image[0]) {
-      profile = `/images/${req.files.image[0].filename}`;
+    if (req.files && 'profile' in req.files && req.files.profile[0]) {
+      profile = `/profiles/${req.files.image[0].filename}`;
     }
 
     const data = {
       profile,
       ...req.body,
     };
-    const result = await UserService.updateProfileToDB(user, data);
+    const result = await UserService.updateProfileToDB(id, data);
 
     sendResponse(res, {
       success: true,
@@ -54,4 +54,8 @@ const updateProfile = catchAsync(
   }
 );
 
-export const UserController = { createUser, getUserProfile, updateProfile };
+export const StudentController = {
+  createStudent,
+  getStudentProfile,
+  updateProfile,
+};
