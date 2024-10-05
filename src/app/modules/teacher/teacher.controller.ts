@@ -3,6 +3,8 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { TeacherService } from './teacher.service';
+import ApiError from '../../../errors/ApiError';
+import { logger } from '../../../shared/logger';
 
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -31,12 +33,13 @@ const getTeacherProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 //update profile
+
 const updateProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
     let profile;
-    if (req.files && 'image' in req.files && req.files.image[0]) {
-      profile = `/images/${req.files.image[0].filename}`;
+    if (req.files && 'profile' in req.files && req.files.profile[0]) {
+      profile = `/profiles/${req.files.profile[0].filename}`;
     }
 
     const data = {

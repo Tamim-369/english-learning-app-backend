@@ -11,7 +11,6 @@ const fileUploadHandler = () => {
   if (!fs.existsSync(baseUploadDir)) {
     fs.mkdirSync(baseUploadDir);
   }
-
   //folder create for different file
   const createDir = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -24,6 +23,9 @@ const fileUploadHandler = () => {
     destination: (req, file, cb) => {
       let uploadDir;
       switch (file.fieldname) {
+        case 'profile':
+          uploadDir = path.join(baseUploadDir, 'profiles');
+          break;
         case 'image':
           uploadDir = path.join(baseUploadDir, 'images');
           break;
@@ -55,7 +57,7 @@ const fileUploadHandler = () => {
 
   //file filter
   const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    if (file.fieldname === 'image') {
+    if (file.fieldname === 'image' || file.fieldname === 'profile') {
       if (
         file.mimetype === 'image/jpeg' ||
         file.mimetype === 'image/png' ||
@@ -92,6 +94,7 @@ const fileUploadHandler = () => {
     storage: storage,
     fileFilter: filterFilter,
   }).fields([
+    { name: 'profile', maxCount: 3 },
     { name: 'image', maxCount: 3 },
     { name: 'media', maxCount: 3 },
     { name: 'doc', maxCount: 3 },

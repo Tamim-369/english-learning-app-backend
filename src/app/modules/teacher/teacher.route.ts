@@ -19,7 +19,9 @@ router.get('/:id', TeacherController.getTeacherById);
 // update teacher profile
 router.put(
   '/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
   validateRequest(TeacherValidation.updateTeacherZodSchema),
+  fileUploadHandler(),
   TeacherController.updateProfile
 );
 
