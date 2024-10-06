@@ -5,16 +5,11 @@ import ApiError from '../../../errors/ApiError';
 import { Teacher } from '../teacher/teacher.model';
 import { status } from '../../../enums/user';
 import { Lecture } from './lecture/lecture.model';
+import { CourseValidation } from './course.validation';
 
 const createCourseToDB = async (data: any): Promise<Partial<ICourse>> => {
   const isExistTeacher = await Teacher.findOne({ _id: data.teacherID });
-  const isTeacherDeleted = (await isExistTeacher?.status) === status.delete;
-  if (data?.lectures.length === 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Lectures not found!');
-  }
-  if (!data?.lectures) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Lectures not found!');
-  }
+  const isTeacherDeleted = isExistTeacher?.status === status.delete;
   let lectures;
   if (data.lectures.length > 0) {
     lectures = data.lectures;
@@ -31,6 +26,17 @@ const createCourseToDB = async (data: any): Promise<Partial<ICourse>> => {
     start: new Date(time.start),
     end: new Date(time.end),
   };
+  data.price = Number(data.price);
+  data.studentRange = Number(data.studentRange);
+  data.time.start = data.time.start.toString();
+  data.time.end = data.time.end.toString();
+
+  const validateData = {
+    body: {
+      ...data,
+    },
+  };
+  await CourseValidation.createCourseZodSchema.parseAsync(validateData);
   const result = await Course.create(data);
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Course not created!');
@@ -57,6 +63,12 @@ const createCourseToDB = async (data: any): Promise<Partial<ICourse>> => {
         },
       });
     }
+  } else {
+    await Course.findByIdAndUpdate(result._id, {
+      $push: {
+        lectures: [],
+      },
+    });
   }
   return result;
 };

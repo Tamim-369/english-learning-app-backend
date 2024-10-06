@@ -4,6 +4,7 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { CourseService } from './course.service';
 import { logger } from '../../../shared/logger';
+import { CourseValidation } from './course.validation';
 
 const createCourse = catchAsync(async (req: Request, res: Response) => {
   const { ...courseData } = req.body;
@@ -15,7 +16,7 @@ const createCourse = catchAsync(async (req: Request, res: Response) => {
     banner,
     ...courseData,
   };
-  logger.info(JSON.stringify(data));
+
   const result = await CourseService.createCourseToDB(data);
 
   sendResponse(res, {
