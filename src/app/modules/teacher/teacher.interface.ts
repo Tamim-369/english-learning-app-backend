@@ -17,6 +17,7 @@ export type ITeacher = {
   dateOfBirth?: Date;
   designation?: string;
   experience?: Number;
+  stripeAccountId?: string;
   education?: [Education];
   authentication?: {
     isResetPassword: boolean;

@@ -9,7 +9,6 @@ export type IStudent = {
   password: string;
   address: string;
   profile?: string;
-  cardNumber?: string;
   status: 'active' | 'delete';
   verified: boolean;
   gender: string;

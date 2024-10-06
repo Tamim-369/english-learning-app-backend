@@ -5,6 +5,7 @@ const createTeacherZodSchema = z.object({
     name: z.string({ required_error: 'Name is required' }),
     email: z.string({ required_error: 'Email is required' }),
     phone: z.string({ required_error: 'Phone Number is required' }),
+    stripeAccountId: z.string().optional(),
     password: z.string({ required_error: 'Password is required' }),
     profile: z.string().optional(),
   }),
@@ -28,6 +29,7 @@ const updateTeacherZodSchema = z.object({
       .optional(),
     dateOfBirth: z.date().optional(),
     designation: z.string().optional(),
+
     experience: z.number().optional(),
     education: z.array(z.string()).optional(),
   }),

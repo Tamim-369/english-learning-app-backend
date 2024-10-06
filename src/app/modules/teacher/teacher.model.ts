@@ -66,6 +66,10 @@ const teacherSchema = new Schema<ITeacher, TeacherModel>(
     experience: {
       type: Number,
     },
+    stripeAccountId: {
+      type: String,
+      default: null,
+    },
     education: [
       {
         degree: {

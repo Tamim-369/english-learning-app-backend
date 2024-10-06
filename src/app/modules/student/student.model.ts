@@ -52,11 +52,7 @@ const userSchema = new Schema<IStudent, StudentModel>(
       type: Boolean,
       default: false,
     },
-    cardNumber: {
-      type: String,
-      unique: true,
-      default: null,
-    },
+
     gender: {
       type: String,
       enum: ['male', 'female', 'other'],

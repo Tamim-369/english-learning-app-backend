@@ -6,32 +6,26 @@ import validateRequest from '../../middlewares/validateRequest';
 import { TeacherController } from './teacher.controller';
 import { TeacherValidation } from './teacher.validation';
 const router = express.Router();
-// get teacher details including the private information like password
-router.get(
-  '/profile',
-  auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
-  TeacherController.getTeacherProfile
-);
-// get all teachers
-router.get('/all', TeacherController.getAllTeachers);
-// get teacher by id
-router.get('/:id', TeacherController.getTeacherById);
-// update teacher profile
-router.patch(
-  '/:id',
-  auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
-  validateRequest(TeacherValidation.updateTeacherZodSchema),
-  fileUploadHandler(),
-  TeacherController.updateProfile
-);
-
-router.delete(
-  '/:id',
-  auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
-  TeacherController.deleteTeacher
-);
-// create new teacher
 router
+  .get(
+    '/profile',
+    auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
+    TeacherController.getTeacherProfile
+  )
+  .get('/all', TeacherController.getAllTeachers)
+  .get('/:id', TeacherController.getTeacherById)
+  .patch(
+    '/:id',
+    auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
+    validateRequest(TeacherValidation.updateTeacherZodSchema),
+    fileUploadHandler(),
+    TeacherController.updateProfile
+  )
+  .delete(
+    '/:id',
+    auth(USER_ROLES.ADMIN, USER_ROLES.TEACHER),
+    TeacherController.deleteTeacher
+  )
   .route('/')
   .post(
     validateRequest(TeacherValidation.createTeacherZodSchema),
