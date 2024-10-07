@@ -125,10 +125,19 @@ const getTeacherByIdFromDB = async (
   return result;
 };
 
+const deleteTeacherFromDB = async (id: string): Promise<Partial<any>> => {
+  const result = await Teacher.findOneAndDelete({ _id: id });
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Teacher doesn't exist!");
+  }
+  return { message: 'Teacher deleted successfully' };
+};
+
 export const TeacherService = {
   createTeacherToDB,
   getTeacherProfileFromDB,
   updateProfileToDB,
   getAllTeachersFromDB,
   getTeacherByIdFromDB,
+  deleteTeacherFromDB,
 };
