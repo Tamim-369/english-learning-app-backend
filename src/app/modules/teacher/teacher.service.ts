@@ -116,14 +116,14 @@ const updateProfileToDB = async (
   id: string,
   payload: Partial<ITeacher>
 ): Promise<Partial<ITeacher | null>> => {
-  const isExistUser = await Teacher.isExistTeacherById(id);
+  const isExistUser = await Teacher.findById(id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Teacher doesn't exist!");
   }
 
   //unlink file here
   if (payload.profile) {
-    unlinkFile(isExistUser.profile);
+    unlinkFile(isExistUser.profile!);
   }
 
   const updateDoc = await Teacher.findOneAndUpdate({ _id: id }, payload, {
