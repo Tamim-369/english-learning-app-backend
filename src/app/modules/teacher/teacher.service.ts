@@ -21,7 +21,11 @@ const stripe = new Stripe(stripeSecretKey);
 
 const createTeacherToDB = async (payload: Partial<ITeacher>): Promise<any> => {
   payload.role = USER_ROLES.TEACHER;
+  const isExistUser = await Teacher.findOne({ email: payload.email });
 
+  if (isExistUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher already exist!');
+  }
   // Create the teacher in the database
   const createTeacher = await Teacher.create(payload);
   if (!createTeacher) {
