@@ -22,10 +22,12 @@ const teacherSchema = new Schema<ITeacher, TeacherModel>(
       required: true,
       unique: true,
       lowercase: true,
+      match: /.+\@.+\..+/, // Regex for basic email validation
     },
     phone: {
       type: String,
       required: true,
+      // Add regex or other validation here if needed
     },
     password: {
       type: String,
@@ -42,7 +44,7 @@ const teacherSchema = new Schema<ITeacher, TeacherModel>(
     },
     status: {
       type: String,
-      enum: ['active', 'delete'],
+      enum: ['active', 'deleted'], // Changed 'delete' to 'deleted' for clarity
       default: 'active',
     },
     verified: {
@@ -65,10 +67,12 @@ const teacherSchema = new Schema<ITeacher, TeacherModel>(
     },
     experience: {
       type: Number,
+      min: 0, // Ensure experience is a positive number
     },
     stripeAccountId: {
       type: String,
       default: null,
+      index: true, // Index for faster lookups
     },
     education: [
       {
@@ -80,24 +84,23 @@ const teacherSchema = new Schema<ITeacher, TeacherModel>(
           type: String,
           required: true,
         },
+        // You can add more fields here if needed
       },
     ],
     authentication: {
-      type: {
-        isResetPassword: {
-          type: Boolean,
-          default: false,
-        },
-        oneTimeCode: {
-          type: Number,
-          default: null,
-        },
-        expireAt: {
-          type: Date,
-          default: null,
-        },
+      isResetPassword: {
+        // Flattened structure for clarity
+        type: Boolean,
+        default: false,
       },
-      select: 0,
+      oneTimeCode: {
+        type: Number,
+        default: null,
+      },
+      expireAt: {
+        type: Date,
+        default: null,
+      },
     },
   },
   { timestamps: true }

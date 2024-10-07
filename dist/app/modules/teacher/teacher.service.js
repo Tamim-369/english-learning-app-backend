@@ -47,17 +47,17 @@ const createTeacherToDB = (payload) => __awaiter(void 0, void 0, void 0, functio
     yield stripe.accounts.update(account.id, {
         business_profile: {
             mcc: '8299',
-            url: `http://192.168.10.192:5000/teachers/${createTeacher._id}`,
+            url: `http://${config_1.default.domain_stripe}/teachers/${createTeacher._id}`,
         },
         business_type: 'individual',
         settings: {
             payments: {
-                statement_descriptor: 'EnglishLearnigApp',
+                statement_descriptor: 'EnglishLearningApp',
             },
         },
         tos_acceptance: {
             date: Math.floor(Date.now() / 1000),
-            ip: '192.168.10.192',
+            ip: config_1.default.ip_address || '192.168.10.192',
         },
     });
     const otp = (0, generateOTP_1.default)();

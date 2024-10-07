@@ -3,14 +3,22 @@ import { z } from 'zod';
 const createTeacherZodSchema = z.object({
   body: z.object({
     name: z.string({ required_error: 'Name is required' }),
-    email: z.string({ required_error: 'Email is required' }),
-    phone: z.string({ required_error: 'Phone Number is required' }),
+    email: z
+      .string()
+      .email({ message: 'Invalid email format' }) // Email format validation
+      .nonempty({ message: 'Email is required' }), // Ensures email is not empty
+    phone: z
+      .string()
+      .nonempty({ message: 'Phone Number is required' }) // Ensures phone number is not empty
+      .regex(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number format' }), // Basic international phone number validation
     stripeAccountId: z.string().optional(),
-    password: z.string({ required_error: 'Password is required' }),
+    password: z
+      .string()
+      .min(8, { message: 'Password must be at least 8 characters long' }) // Minimum length for password
+      .nonempty({ message: 'Password is required' }),
     profile: z.string().optional(),
   }),
 });
-
 const updateTeacherZodSchema = z.object({
   body: z.object({
     name: z.string().optional(),

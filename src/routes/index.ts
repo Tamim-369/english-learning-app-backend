@@ -3,6 +3,7 @@ import { AuthRoutes } from '../app/modules/auth/auth.route';
 import { StudentRoutes } from '../app/modules/student/student.route';
 import { TeacherRoutes } from '../app/modules/teacher/teacher.route';
 import { CourseRoutes } from '../app/modules/course/course.route';
+import { ReviewsRoutes } from '../app/modules/reviews/reviews.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -13,6 +14,10 @@ const apiRoutes = [
   {
     path: '/courses',
     route: CourseRoutes,
+  },
+  {
+    path: '/reviews',
+    route: ReviewsRoutes,
   },
   {
     path: '/teachers',

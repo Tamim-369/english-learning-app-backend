@@ -8,26 +8,26 @@ export type ITeacher = {
   phone: string;
   email: string;
   password: string;
-  location: string;
+  location?: string;
   profile?: string;
   country?: string;
-  gender?: string;
-  status?: string;
-  verified?: boolean;
-  dateOfBirth?: Date;
-  designation?: string;
-  experience?: Number;
-  stripeAccountId?: string;
-  education?: [Education];
+  gender?: 'male' | 'female' | 'other'; // Consider using a union type for clarity
+  status?: 'active' | 'deleted'; // Consider using a union type for clarity
+  verified?: boolean; // Optional
+  dateOfBirth?: Date; // Optional
+  designation?: string; // Optional
+  experience?: number; // Changed to lowercase 'number'
+  stripeAccountId?: string; // Optional
+  education?: Education[]; // Changed to use array notation directly
   authentication?: {
     isResetPassword: boolean;
-    oneTimeCode: number;
-    expireAt: Date;
+    oneTimeCode?: number; // Made optional in case not set
+    expireAt?: Date; // Made optional in case not set
   };
 };
 
 export type TeacherModel = {
-  isExistTeacherById(id: string): any;
-  isExistTeacherByEmail(email: string): any;
-  isMatchPassword(password: string, hashPassword: string): boolean;
+  isExistTeacherById(id: string): Promise<ITeacher | null>; // Specify return type more clearly
+  isExistTeacherByEmail(email: string): Promise<ITeacher | null>; // Specify return type more clearly
+  isMatchPassword(password: string, hashPassword: string): Promise<boolean>; // Specify return type more clearly
 } & Model<ITeacher>;

@@ -14,8 +14,10 @@ const createEnrollmentToDB = async (data: any) => {
   if (!isExistCourse) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Course not found');
   }
+
   const teacher = await Teacher.findOne({ _id: isExistCourse.teacherID });
   let paymentIntent;
+
   try {
     paymentIntent = await stripe.paymentIntents.create({
       amount: isExistCourse.price * 100,
@@ -60,10 +62,24 @@ const createEnrollmentToDB = async (data: any) => {
   const teacherShare = isExistCourse.price * 0.8 * 100;
 
   try {
+    // Check if teacher's account has 'transfers' capability
+    const account = await stripe.accounts.retrieve(teacher.stripeAccountId);
+
+    if (
+      !account.capabilities.transfers ||
+      account.capabilities.transfers !== 'active'
+    ) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Teacher's account does not have transfers capability enabled."
+      );
+    }
+
+    // Proceed with the transfer
     await stripe.transfers.create({
       amount: teacherShare,
       currency: 'usd',
-      destination: teacher?.stripeAccountId!,
+      destination: teacher.stripeAccountId!,
       transfer_group: paymentIntent.id,
     });
   } catch (error) {

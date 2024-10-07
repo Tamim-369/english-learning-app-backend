@@ -19,66 +19,81 @@ if (!stripeSecretKey) {
 
 const stripe = new Stripe(stripeSecretKey);
 
-const createTeacherToDB = async (
-  payload: Partial<ITeacher>
-): Promise<ITeacher> => {
+const createTeacherToDB = async (payload: Partial<ITeacher>): Promise<any> => {
   payload.role = USER_ROLES.TEACHER;
 
+  // Create the teacher in the database
   const createTeacher = await Teacher.create(payload);
   if (!createTeacher) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
 
-  const account = await stripe.accounts.create({
-    type: 'express',
-    country: 'US',
-    email: createTeacher.email,
-    capabilities: {
-      transfers: { requested: true },
-      card_payments: { requested: true },
-    },
-  });
-
-  await Teacher.findOneAndUpdate(
-    { _id: createTeacher._id },
-    { $set: { stripeAccountId: account.id } }
-  );
-  await stripe.accounts.update(account.id, {
-    business_profile: {
-      mcc: '8299',
-      url: `http://192.168.10.192:5000/teachers/${createTeacher._id}`,
-    },
-    business_type: 'individual',
-    settings: {
-      payments: {
-        statement_descriptor: 'EnglishLearnigApp',
+  try {
+    // Create the Stripe account
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: 'US',
+      email: createTeacher.email,
+      capabilities: {
+        transfers: { requested: true },
+        card_payments: { requested: true },
       },
-    },
-    tos_acceptance: {
-      date: Math.floor(Date.now() / 1000),
-      ip: '192.168.10.192',
-    },
-  });
+    });
 
-  const otp = generateOTP();
-  const values = {
-    name: createTeacher.name,
-    otp: otp,
-    email: createTeacher.email!,
-  };
-  const createAccountTemplate = emailTemplate.createAccount(values);
-  emailHelper.sendEmail(createAccountTemplate);
+    // Update the teacher's Stripe account ID
+    await Teacher.findOneAndUpdate(
+      { _id: createTeacher._id },
+      { $set: { stripeAccountId: account.id } }
+    );
 
-  const authentication = {
-    oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000),
-  };
-  await Teacher.findOneAndUpdate(
-    { _id: createTeacher._id },
-    { $set: { authentication } }
-  );
+    // Create an account link for onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url:
+        'https://b1df-103-144-201-128.ngrok-free.app/api/v1/teachers/', // URL to redirect if the user needs to retry
+      return_url: 'https://b1df-103-144-201-128.ngrok-free.app/', // URL to redirect after completion
+      type: 'account_onboarding',
+    });
 
-  return createTeacher;
+    // Update the Stripe account with required information
+    await updateTeacherAccount(createTeacher);
+
+    // Redirect the teacher to the onboarding URL
+    return { ...createTeacher, onboardingUrl: accountLink.url }; // Return the onboarding URL
+  } catch (error) {
+    // If there's an error creating the Stripe account, delete the teacher
+    await Teacher.findByIdAndDelete(createTeacher._id);
+
+    console.error('Error creating Stripe account:', error);
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to create Stripe account. Teacher has been deleted.'
+    );
+  }
+};
+
+// Function to update teacher's Stripe account with required fields
+const updateTeacherAccount = async (teacher: any) => {
+  try {
+    await stripe.accounts.update(teacher.stripeAccountId, {
+      business_profile: {
+        mcc: '8299', // Replace with appropriate MCC
+        url: 'https://your-business-url.com', // Replace with actual business URL
+      },
+      settings: {
+        payments: {
+          statement_descriptor: 'Your Business Name', // Replace with your business name
+        },
+      },
+      // Removed representative and tos_acceptance fields
+    });
+  } catch (error) {
+    console.error('Error updating Stripe account:', error);
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to update Stripe account.'
+    );
+  }
 };
 
 const getTeacherProfileFromDB = async (
