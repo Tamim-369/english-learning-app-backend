@@ -8,6 +8,7 @@ const auth_route_1 = require("../app/modules/auth/auth.route");
 const student_route_1 = require("../app/modules/student/student.route");
 const teacher_route_1 = require("../app/modules/teacher/teacher.route");
 const course_route_1 = require("../app/modules/course/course.route");
+const reviews_route_1 = require("../app/modules/reviews/reviews.route");
 const router = express_1.default.Router();
 const apiRoutes = [
     {
@@ -17,6 +18,10 @@ const apiRoutes = [
     {
         path: '/courses',
         route: course_route_1.CourseRoutes,
+    },
+    {
+        path: '/reviews',
+        route: reviews_route_1.ReviewsRoutes,
     },
     {
         path: '/teachers',

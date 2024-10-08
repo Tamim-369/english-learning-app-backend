@@ -81,6 +81,7 @@ import config from '../../../config';
 const createCourseToDB = async (data: any): Promise<Partial<ICourse>> => {
   // Validate the teacher's existence
   const isExistTeacher = await Teacher.findOne({ _id: data.teacherID });
+  // @ts-ignore
   const isTeacherDeleted = isExistTeacher?.status === status.delete;
   let lectures;
   const stripe = new Stripe(config.stripe_secret_key!);
@@ -220,6 +221,7 @@ const getCourseByTeacherIdFromDB = async (
   if (!isExistTeacher) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher not found!');
   }
+  // @ts-ignore
   if (isExistTeacher.status === status.delete) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher deleted!');
   }

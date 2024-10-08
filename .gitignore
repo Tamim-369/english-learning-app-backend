@@ -4,4 +4,4 @@ uploads/
 /winston
 testing-frontend-react
 /dist
-
+.vercel

@@ -20,7 +20,11 @@ const config_1 = __importDefault(require("../../../config"));
 const user_1 = require("../../../enums/user");
 const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const teacherSchema = new mongoose_1.Schema({
-    name: {
+    firstName: {
+        type: String,
+        required: true,
+    },
+    lastName: {
         type: String,
         required: true,
     },
@@ -34,10 +38,12 @@ const teacherSchema = new mongoose_1.Schema({
         required: true,
         unique: true,
         lowercase: true,
+        match: /.+\@.+\..+/, // Regex for basic email validation
     },
     phone: {
         type: String,
         required: true,
+        // Add regex or other validation here if needed
     },
     password: {
         type: String,
@@ -54,7 +60,7 @@ const teacherSchema = new mongoose_1.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'delete'],
+        enum: ['active', 'deleted'], // Changed 'delete' to 'deleted' for clarity
         default: 'active',
     },
     verified: {
@@ -77,10 +83,12 @@ const teacherSchema = new mongoose_1.Schema({
     },
     experience: {
         type: Number,
+        min: 0, // Ensure experience is a positive number
     },
     stripeAccountId: {
         type: String,
         default: null,
+        index: true, // Index for faster lookups
     },
     education: [
         {
@@ -92,24 +100,23 @@ const teacherSchema = new mongoose_1.Schema({
                 type: String,
                 required: true,
             },
+            // You can add more fields here if needed
         },
     ],
     authentication: {
-        type: {
-            isResetPassword: {
-                type: Boolean,
-                default: false,
-            },
-            oneTimeCode: {
-                type: Number,
-                default: null,
-            },
-            expireAt: {
-                type: Date,
-                default: null,
-            },
+        isResetPassword: {
+            // Flattened structure for clarity
+            type: Boolean,
+            default: false,
         },
-        select: 0,
+        oneTimeCode: {
+            type: Number,
+            default: null,
+        },
+        expireAt: {
+            type: Date,
+            default: null,
+        },
     },
 }, { timestamps: true });
 //exist Teacher check

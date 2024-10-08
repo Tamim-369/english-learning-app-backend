@@ -91,7 +91,7 @@ const verifyEmailToDB = (payload) => __awaiter(void 0, void 0, void 0, function*
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'The OTP you provided is incorrect.');
     }
     const currentTime = new Date();
-    if (currentTime > ((_b = isExistUser.authentication) === null || _b === void 0 ? void 0 : _b.expireAt)) {
+    if (currentTime > ((_b = isExistUser === null || isExistUser === void 0 ? void 0 : isExistUser.authentication) === null || _b === void 0 ? void 0 : _b.expireAt)) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'The OTP has expired. Please request a new one.');
     }
     let message;

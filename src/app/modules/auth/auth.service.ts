@@ -126,7 +126,7 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
   }
 
   const currentTime = new Date();
-  if (currentTime > isExistUser.authentication?.expireAt) {
+  if (currentTime > isExistUser?.authentication?.expireAt!) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'The OTP has expired. Please request a new one.'

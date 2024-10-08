@@ -4,17 +4,28 @@ exports.TeacherValidation = void 0;
 const zod_1 = require("zod");
 const createTeacherZodSchema = zod_1.z.object({
     body: zod_1.z.object({
-        name: zod_1.z.string({ required_error: 'Name is required' }),
-        email: zod_1.z.string({ required_error: 'Email is required' }),
-        phone: zod_1.z.string({ required_error: 'Phone Number is required' }),
+        firstName: zod_1.z.string({ required_error: 'Name is required' }),
+        lastName: zod_1.z.string({ required_error: 'Name is required' }),
+        email: zod_1.z
+            .string()
+            .email({ message: 'Invalid email format' }) // Email format validation
+            .nonempty({ message: 'Email is required' }), // Ensures email is not empty
+        phone: zod_1.z
+            .string()
+            .nonempty({ message: 'Phone Number is required' }) // Ensures phone number is not empty
+            .regex(/^\+?[1-9]\d{1,14}$/, { message: 'Invalid phone number format' }), // Basic international phone number validation
         stripeAccountId: zod_1.z.string().optional(),
-        password: zod_1.z.string({ required_error: 'Password is required' }),
+        password: zod_1.z
+            .string()
+            .min(8, { message: 'Password must be at least 8 characters long' }) // Minimum length for password
+            .nonempty({ message: 'Password is required' }),
         profile: zod_1.z.string().optional(),
     }),
 });
 const updateTeacherZodSchema = zod_1.z.object({
     body: zod_1.z.object({
-        name: zod_1.z.string().optional(),
+        firstName: zod_1.z.string().optional(),
+        lastName: zod_1.z.string().optional(),
         email: zod_1.z.string().optional(),
         phone: zod_1.z.string().optional(),
         password: zod_1.z.string().optional(),

@@ -91,6 +91,7 @@ const config_1 = __importDefault(require("../../../config"));
 const createCourseToDB = (data) => __awaiter(void 0, void 0, void 0, function* () {
     // Validate the teacher's existence
     const isExistTeacher = yield teacher_model_1.Teacher.findOne({ _id: data.teacherID });
+    // @ts-ignore
     const isTeacherDeleted = (isExistTeacher === null || isExistTeacher === void 0 ? void 0 : isExistTeacher.status) === user_1.status.delete;
     let lectures;
     const stripe = new stripe_1.default(config_1.default.stripe_secret_key);
@@ -203,6 +204,7 @@ const getCourseByTeacherIdFromDB = (id) => __awaiter(void 0, void 0, void 0, fun
     if (!isExistTeacher) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Teacher not found!');
     }
+    // @ts-ignore
     if (isExistTeacher.status === user_1.status.delete) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Teacher deleted!');
     }

@@ -22,6 +22,7 @@ const ApiError_1 = __importDefault(require("../../../../errors/ApiError"));
 const teacher_model_1 = require("../../teacher/teacher.model");
 const stripe = new stripe_1.default(config_1.default.stripe_secret_key);
 const createEnrollmentToDB = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const isExistCourse = yield course_model_1.Course.findOne({ _id: data.courseID });
     if (!isExistCourse) {
         throw new ApiError_1.default(http_status_codes_1.StatusCodes.NOT_FOUND, 'Course not found');
@@ -63,6 +64,13 @@ const createEnrollmentToDB = (data) => __awaiter(void 0, void 0, void 0, functio
     }
     const teacherShare = isExistCourse.price * 0.8 * 100;
     try {
+        // Check if teacher's account has 'transfers' capability
+        const account = yield stripe.accounts.retrieve(teacher === null || teacher === void 0 ? void 0 : teacher.stripeAccountId);
+        if (!((_a = account.capabilities) === null || _a === void 0 ? void 0 : _a.transfers) ||
+            ((_b = account.capabilities) === null || _b === void 0 ? void 0 : _b.transfers) !== 'active') {
+            throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, "Teacher's account does not have transfers capability enabled.");
+        }
+        // Proceed with the transfer
         yield stripe.transfers.create({
             amount: teacherShare,
             currency: 'usd',
