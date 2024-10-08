@@ -9,7 +9,7 @@
     "lint:fix": "lint . --fix",
     "prettier:check": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "prettier:fix": "prettier --write .",
-    "tsc":"tsc",
+    "tsc": "tsc",
     "build": " npm i --legacy-peer-deps && npm run tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
