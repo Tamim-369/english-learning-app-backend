@@ -3,7 +3,8 @@ import { USER_ROLES } from '../../../enums/user';
 import { Education } from '../../../types/teacher';
 
 export type ITeacher = {
-  name: string;
+  firstName: string;
+  lastName: string;
   role?: USER_ROLES;
   phone: string;
   email: string;

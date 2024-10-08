@@ -8,7 +8,11 @@ import { ITeacher, TeacherModel } from './teacher.interface';
 
 const teacherSchema = new Schema<ITeacher, TeacherModel>(
   {
-    name: {
+    firstName: {
+      type: String,
+      required: true,
+    },
+    lastName: {
       type: String,
       required: true,
     },

@@ -63,11 +63,11 @@ const createEnrollmentToDB = async (data: any) => {
 
   try {
     // Check if teacher's account has 'transfers' capability
-    const account = await stripe.accounts.retrieve(teacher.stripeAccountId);
+    const account = await stripe.accounts.retrieve(teacher?.stripeAccountId!);
 
     if (
-      !account.capabilities.transfers ||
-      account.capabilities.transfers !== 'active'
+      !account.capabilities?.transfers ||
+      account.capabilities?.transfers !== 'active'
     ) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
@@ -79,7 +79,7 @@ const createEnrollmentToDB = async (data: any) => {
     await stripe.transfers.create({
       amount: teacherShare,
       currency: 'usd',
-      destination: teacher.stripeAccountId!,
+      destination: teacher?.stripeAccountId!,
       transfer_group: paymentIntent.id,
     });
   } catch (error) {

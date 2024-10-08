@@ -17,7 +17,9 @@ if (!stripeSecretKey) {
   throw new Error('Stripe secret key is not defined.');
 }
 
-const stripe = new Stripe(stripeSecretKey);
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2024-09-30.acacia',
+});
 
 const createTeacherToDB = async (payload: Partial<ITeacher>): Promise<any> => {
   payload.role = USER_ROLES.TEACHER;
@@ -26,78 +28,25 @@ const createTeacherToDB = async (payload: Partial<ITeacher>): Promise<any> => {
   if (isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Teacher already exist!');
   }
-  // Create the teacher in the database
+  const account = await stripe.accounts.create({
+    type: 'express',
+    email: payload.email,
+    business_type: 'individual',
+    individual: {
+      first_name: payload.firstName,
+      last_name: payload.lastName,
+      email: payload.email,
+    },
+    capabilities: {
+      transfers: { requested: true },
+    },
+  });
+  payload.stripeAccountId = account.id;
   const createTeacher = await Teacher.create(payload);
   if (!createTeacher) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
-
-  try {
-    // Create the Stripe account
-    const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'US',
-      email: createTeacher.email,
-      capabilities: {
-        transfers: { requested: true },
-        card_payments: { requested: true },
-      },
-    });
-
-    // Update the teacher's Stripe account ID
-    await Teacher.findOneAndUpdate(
-      { _id: createTeacher._id },
-      { $set: { stripeAccountId: account.id } }
-    );
-
-    // Create an account link for onboarding
-    const accountLink = await stripe.accountLinks.create({
-      account: account.id,
-      refresh_url:
-        'https://b1df-103-144-201-128.ngrok-free.app/api/v1/teachers/', // URL to redirect if the user needs to retry
-      return_url: 'https://b1df-103-144-201-128.ngrok-free.app/', // URL to redirect after completion
-      type: 'account_onboarding',
-    });
-
-    // Update the Stripe account with required information
-    await updateTeacherAccount(createTeacher);
-
-    // Redirect the teacher to the onboarding URL
-    return { ...createTeacher, onboardingUrl: accountLink.url }; // Return the onboarding URL
-  } catch (error) {
-    // If there's an error creating the Stripe account, delete the teacher
-    await Teacher.findByIdAndDelete(createTeacher._id);
-
-    console.error('Error creating Stripe account:', error);
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Failed to create Stripe account. Teacher has been deleted.'
-    );
-  }
-};
-
-// Function to update teacher's Stripe account with required fields
-const updateTeacherAccount = async (teacher: any) => {
-  try {
-    await stripe.accounts.update(teacher.stripeAccountId, {
-      business_profile: {
-        mcc: '8299', // Replace with appropriate MCC
-        url: 'https://your-business-url.com', // Replace with actual business URL
-      },
-      settings: {
-        payments: {
-          statement_descriptor: 'Your Business Name', // Replace with your business name
-        },
-      },
-      // Removed representative and tos_acceptance fields
-    });
-  } catch (error) {
-    console.error('Error updating Stripe account:', error);
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Failed to update Stripe account.'
-    );
-  }
+  return createTeacher;
 };
 
 const getTeacherProfileFromDB = async (
